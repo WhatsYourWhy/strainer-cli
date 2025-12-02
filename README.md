@@ -22,4 +22,22 @@ It is designed to be a **"Flea"**—a tiny, hyper-specialized worker script that
 1. Install [Python 3](https://www.python.org/).
 2. (Optional) Install the brain for "Smart Mode":
    ```bash
+
    pip install sentence-transformers
+
+   Usage
+Method A: The Drag & Drop (Windows)
+Keep fleahive.py and Drag_Text_Here.bat in the same folder.
+
+Drag any .txt or .md file onto the Drag_Text_Here.bat icon.
+
+View your summary in the terminal window.
+
+Method B: Command Line
+Bash
+
+python fleahive.py my_notes.md
+Method C: Pipe Input
+Bash
+
+cat my_article.txt | python fleahive.py -
