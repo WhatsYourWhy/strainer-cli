@@ -12,12 +12,22 @@ from typing import List, Sequence
 
 
 def load_model():
-    """Load the optional embedding model without wrapping the import in try/except."""
-    if importlib.util.find_spec("sentence_transformers"):
-        from sentence_transformers import SentenceTransformer
+    """Load the optional embedding model, but only if its dependencies are present."""
+    if not importlib.util.find_spec("sentence_transformers"):
+        return None
+    if not importlib.util.find_spec("torch"):
+        return None
 
-        return SentenceTransformer("all-MiniLM-L6-v2", device="cpu")
-    return None
+    from sentence_transformers import SentenceTransformer
+
+    try:
+        return SentenceTransformer(
+            "all-MiniLM-L6-v2",
+            device="cpu",
+            local_files_only=True,  # fall back immediately if model weights are not cached
+        )
+    except Exception:
+        return None
 
 
 MODEL = load_model()
