@@ -1,43 +1,67 @@
 # FleaHive 🐝
 
 **A drag-and-drop local summarizer & tagger.**
-100% Offline. Zero Cloud. Instant Results.
 
-## What is this?
-FleaHive is a "Micro-Tool" designed for friction-free text analysis. It accepts `.txt` or `.md` (Markdown) files and instantly returns a JSON object containing:
-- An extractive summary (using semantic ranking or keyword density).
-- Auto-generated tags (topics).
-- Word count metrics.
+FleaHive is a tiny, offline-first helper that accepts `.txt` or `.md` (Markdown) files and returns structured JSON containing:
+- An extractive summary (semantic ranking when available, keyword density otherwise)
+- Auto-generated tags (topics)
+- Word count metrics
 
-It is designed to be a **"Flea"**—a tiny, hyper-specialized worker script that lives in your toolbox, not a bloated SaaS subscription.
+It is designed to live in your toolbox as a small, single-purpose script—not a hosted service.
 
 ## Features
-- **Smart Mode:** Uses `sentence-transformers` (local AI) to understand context and rank sentences by importance.
-- **Fast Mode:** If no AI libraries are found, it falls back to a robust keyword density algorithm.
-- **Markdown Ready:** Intelligently strips Markdown formatting (links, frontmatter, headers) before analyzing, making it perfect for Obsidian vaults.
-- **Drag & Drop:** Includes a Windows Batch wrapper for zero-touch execution.
+- **Smart Mode:** If `sentence-transformers` is installed, FleaHive uses embeddings to rank sentences by importance.
+- **Fast Mode:** Without optional AI packages, it falls back to a keyword-density algorithm.
+- **Markdown ready:** Strips frontmatter, links, and other Markdown noise before analysis.
+- **Drag & drop:** Includes a Windows batch wrapper for zero-touch execution.
 
 ## Installation
 
-1. Install [Python 3](https://www.python.org/).
-2. (Optional) Install the brain for "Smart Mode":
+1) Install [Python 3](https://www.python.org/).
+2) (Optional but recommended for Smart Mode) install the language model:
+
    ```bash
+   pip install -r requirements.txt
+   ```
 
-   pip install sentence-transformers
+## Usage
 
-   Usage
-Method A: The Drag & Drop (Windows)
-Keep fleahive.py and Drag_Text_Here.bat in the same folder.
+### Method A: Drag & Drop (Windows)
+1) Keep `FleaHive.py` and `Drag_Text_Here.bat` in the same folder.  
+2) Drag any `.txt` or `.md` file onto the `Drag_Text_Here.bat` icon.  
+3) View the JSON summary printed in the console window.  
 
-Drag any .txt or .md file onto the Drag_Text_Here.bat icon.
+### Method B: Command Line
+Run FleaHive directly and pass a file path:
 
-View your summary in the terminal window.
+```bash
+python FleaHive.py my_notes.md
+```
 
-Method B: Command Line
-Bash
+### Method C: Pipe Input
+Pipe text to FleaHive by passing `-` as the path:
 
-python fleahive.py my_notes.md
-Method C: Pipe Input
-Bash
+```bash
+cat my_article.txt | python FleaHive.py -
+```
 
-cat my_article.txt | python fleahive.py -
+## Output format
+
+The script prints a JSON document with a summary, tags, and metrics:
+
+```json
+{
+  "summary": "Top-ranked sentences from your document…",
+  "tags": ["topic1", "topic2"],
+  "metrics": {
+    "original_words": 1234,
+    "summary_words": 180,
+    "compression": "14.6%"
+  }
+}
+```
+
+## Notes
+- FleaHive is fully offline. No network calls are made.
+- If optional dependencies are missing, the tool still runs using Fast Mode.
+- Markdown cleaning removes common noise (frontmatter, links, and image markup) before summarization.
