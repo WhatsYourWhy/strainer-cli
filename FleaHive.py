@@ -152,7 +152,7 @@ def tag(text: str, top: int = 8) -> List[str]:
 
 def main(argv: Sequence[str]) -> int:
     if len(argv) < 2:
-        print(json.dumps({"error": "Drag a .txt file here or pipe text in"}))
+        print(json.dumps({"error": "Drag a .txt or .md file here, or pipe text in"}))
         return 1
 
     path = argv[1]
