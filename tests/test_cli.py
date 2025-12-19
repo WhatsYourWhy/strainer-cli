@@ -22,3 +22,15 @@ def test_main_outputs_json_with_compression(monkeypatch, capsys):
     assert result["metrics"]["original_words"] > 0
     assert result["metrics"]["summary_words"] > 0
     assert re.match(r"^[0-9]+(?:\.[0-9])?%$", result["metrics"]["compression"])
+
+
+def test_main_missing_file_reports_error_json(tmp_path, capsys):
+    missing_path = tmp_path / "missing.txt"
+
+    exit_code = main(["FleaHive.py", str(missing_path)])
+    captured = capsys.readouterr().out
+    result = json.loads(captured)
+
+    assert exit_code == 1
+    assert result["error"]
+    assert str(missing_path) in result["error"]
