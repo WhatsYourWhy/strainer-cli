@@ -1,4 +1,3 @@
-```text
 sentence-transformers
 numpy
 torch
