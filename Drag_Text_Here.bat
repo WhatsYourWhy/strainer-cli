@@ -6,7 +6,7 @@ echo waking up the hive...
 echo ---------------------------------------------------
 
 :: This runs the python script and passes the file you dropped (%1) to it
-python "%~dp0fleahive.py" "%~1"
+python "%~dp0FleaHive.py" "%~1"
 
 echo.
 echo ---------------------------------------------------

@@ -3,101 +3,185 @@
 # Drag any .txt onto this file → instant summary + tags + stats
 # 100% offline · zero accounts · zero cost
 
-import re, sys, json
+import importlib.util
+import json
+import re
+import sys
 from collections import Counter
+from typing import List, Sequence
 
-# Optional brain upgrade (pip install sentence-transformers once)
-try:
+
+def load_model():
+    """Load the optional embedding model, but only if its dependencies are present."""
+    if not importlib.util.find_spec("sentence_transformers"):
+        return None
+    if not importlib.util.find_spec("torch"):
+        return None
+
     from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
-except:
-    model = None
 
-def clean(text):
-    # 1. Remove Frontmatter (metadata at top of .md files)
-    text = re.sub(r'(?m)^---[\s\S]+?---', '', text)
-    
-    # 2. Fix Markdown Links: [Text](URL) -> Text
-    # This keeps "Text" and deletes the URL parts
-    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    
-    # 3. Remove standard noise (Refs, URLs, Images)
-    text = re.sub(r'(?i)@article{[^}]+}|https?://\S+|doi:\S+', '', text)
-    text = re.sub(r'!\[.*?\]\([^\)]+\)', '', text) # Remove images completely
-    
-    # 4. Remove Markdown formatting symbols (*, #, >, `)
-    text = re.sub(r'[*#>`~]', '', text) 
-    
-    # 5. Clean up structural noise
-    text = re.sub(r'^Table\s*\d+.*|^Figure\s*\d+.*', '', text, flags=re.M|re.I)
-    
-    # 6. Cut off references section if present
-    cutoff = re.search(r'(?i)\n\s*(references|bibliography|appendix)\s*\n', text)
-    if cutoff: text = text[:cutoff.start()]
-    
+    try:
+        return SentenceTransformer(
+            "all-MiniLM-L6-v2",
+            device="cpu",
+            local_files_only=True,  # fall back immediately if model weights are not cached
+        )
+    except Exception:
+        return None
+
+
+MODEL = load_model()
+
+
+def clean(text: str) -> str:
+    """Normalize Markdown-heavy text before summarization."""
+    text = re.sub(r"(?m)^---[\s\S]+?---", "", text)  # frontmatter
+    text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)  # links
+    text = re.sub(r"(?i)@article{[^}]+}|https?://\S+|doi:\S+", "", text)  # refs/urls
+    text = re.sub(r"!\[.*?\]\([^\)]+\)", "", text)  # images
+    text = re.sub(r"[*#>`~]", "", text)  # markdown symbols
+    text = re.sub(r"^Table\s*\d+.*|^Figure\s*\d+.*", "", text, flags=re.M | re.I)  # fig/table
+
+    cutoff = re.search(r"(?i)\n\s*(references|bibliography|appendix)\s*\n", text)
+    if cutoff:
+        text = text[: cutoff.start()]
+
     return text.strip()
 
-def summarize(text, max_len=450):
-    text = clean(text)
-    sentences = [s.strip() for s in re.split(r'[.!?]+', text) if len(s.strip()) > 20]
+
+def split_sentences(text: str) -> List[str]:
+    """Simple sentence splitter that preserves meaningful fragments."""
+    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if len(s.strip()) > 20]
+
+
+def summarize(text: str, max_len: int = 450) -> str:
+    cleaned = clean(text)
+    sentences = split_sentences(cleaned)
     if not sentences:
         return "Nothing to summarize after cleaning."
 
-    if model:  # semantic mode — compares every sentence to the whole document
-        embeddings = model.encode([text] + sentences)
+    if MODEL:  # semantic mode — compares every sentence to the whole document
+        embeddings = MODEL.encode([cleaned] + sentences)
         doc_vec = embeddings[0]
         scores = [float(doc_vec @ emb) for emb in embeddings[1:]]
         ranked = sorted(zip(scores, sentences), reverse=True)
     else:  # pure keyword mode (still excellent)
-        words = re.findall(r'\w+', text.lower())
-        common = {w for w, c in Counter(words).most_common(20) if len(w) > 4}
-        ranked = sorted([(sum(w[:5] in s.lower() for w in common), s) for s in sentences], reverse=True)
+        words = re.findall(r"\w+", cleaned.lower())
+        common = {w for w, _ in Counter(words).most_common(20) if len(w) > 4}
+        ranked = sorted(
+            [(sum(w[:5] in s.lower() for w in common), s) for s in sentences],
+            reverse=True,
+        )
 
-    result, used = [], 0
-    for _, s in ranked:
-        if used + len(s) <= max_len:
-            result.append(s)
-            used += len(s)
+    result: List[str] = []
+    used = 0
+    for _, sentence in ranked:
+        if used + len(sentence) <= max_len:
+            result.append(sentence)
+            used += len(sentence)
         else:
             break
-    return " ".join(result) or text[:max_len] + "…"
+    return " ".join(result) or cleaned[:max_len] + "…"
 
-def tag(text, top=8):
-    words = re.findall(r'\w+', text.lower())
+
+def tag(text: str, top: int = 8) -> List[str]:
+    words = re.findall(r"\w+", text.lower())
     stop = {
-        'the','and','for','with','this','that','from','were','been','have','using','used',
-        'which','their','they','will','would','there','these','about','when','what','where',
-        'is','are','was','not','but','all','into','can','has','more','one','its','out',
-        'also','than','other','some','very','only','time','just','even','most','like','may',
-        'such','each','new','based','our','results','study','method','approach','proposed'
+        "the",
+        "and",
+        "for",
+        "with",
+        "this",
+        "that",
+        "from",
+        "were",
+        "been",
+        "have",
+        "using",
+        "used",
+        "which",
+        "their",
+        "they",
+        "will",
+        "would",
+        "there",
+        "these",
+        "about",
+        "when",
+        "what",
+        "where",
+        "is",
+        "are",
+        "was",
+        "not",
+        "but",
+        "all",
+        "into",
+        "can",
+        "has",
+        "more",
+        "one",
+        "its",
+        "out",
+        "also",
+        "than",
+        "other",
+        "some",
+        "very",
+        "only",
+        "time",
+        "just",
+        "even",
+        "most",
+        "like",
+        "may",
+        "such",
+        "each",
+        "new",
+        "based",
+        "our",
+        "results",
+        "study",
+        "method",
+        "approach",
+        "proposed",
     }
     candidates = [w for w in words if w not in stop and len(w) > 3]
-    candidates = [w for w in words if w not in stop and len(w) > 3]
-    return [w for w, _ in Counter(candidates).most_common(top)]
+    return [word for word, _ in Counter(candidates).most_common(top)]
 
-# ——————— RUN ———————
-if len(sys.argv) < 2:
-    print(json.dumps({"error": "Drag a .txt file here or pipe text in"}))
-    sys.exit(1)
 
-path = sys.argv[1]
-try:
-    text = sys.stdin.read() if path == '-' else open(path, 'r', encoding='utf-8').read()
-except Exception as e:
-    print(json.dumps({"error": str(e)}))
-    sys.exit(1)
+def main(argv: Sequence[str]) -> int:
+    if len(argv) < 2:
+        print(json.dumps({"error": "Drag a .txt file here or pipe text in"}))
+        return 1
 
-summary = summarize(text)
-tags = tag(summary + text)
+    path = argv[1]
+    try:
+        text = sys.stdin.read() if path == "-" else open(path, "r", encoding="utf-8").read()
+    except Exception as exc:  # pragma: no cover - CLI error surface
+        print(json.dumps({"error": str(exc)}))
+        return 1
 
-result = {
-    "summary": summary,
-    "tags": tags,
-    "metrics": {
-        "original_words": len(re.findall(r'\w+', text)),
-        "summary_words": len(re.findall(r'\w+', summary)),
-        "compression": f"{len(summary)/max(len(text),1):.1%}"
+    summary = summarize(text)
+    tags = tag(summary + text)
+
+    original_words = len(re.findall(r"\w+", text))
+    summary_words = len(re.findall(r"\w+", summary))
+    compression_ratio = summary_words / original_words if original_words else 0
+
+    result = {
+        "summary": summary,
+        "tags": tags,
+        "metrics": {
+            "original_words": original_words,
+            "summary_words": summary_words,
+            "compression": f"{compression_ratio:.1%}",
+        },
     }
-}
 
-print(json.dumps(result, indent=2, ensure_ascii=False))
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
