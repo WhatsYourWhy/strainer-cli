@@ -5,10 +5,11 @@
 
 import importlib.util
 import json
+import math
 import re
 import sys
 from collections import Counter
-from typing import List, Sequence
+from typing import Iterable, List, Sequence
 
 
 def load_model():
@@ -31,6 +32,15 @@ def load_model():
 
 
 MODEL = load_model()
+
+
+def _cosine_similarity(vec_a: Iterable[float], vec_b: Iterable[float]) -> float:
+    dot = sum(a * b for a, b in zip(vec_a, vec_b))
+    norm_a = math.sqrt(sum(a * a for a in vec_a))
+    norm_b = math.sqrt(sum(b * b for b in vec_b))
+    if not norm_a or not norm_b:
+        return 0.0
+    return float(dot / (norm_a * norm_b))
 
 
 def clean(text: str) -> str:
@@ -68,9 +78,9 @@ def summarize(text: str, max_len: int = 450, *, already_cleaned: bool = False) -
         return "Nothing to summarize after cleaning."
 
     if MODEL:  # semantic mode — compares every sentence to the whole document
-        embeddings = MODEL.encode([cleaned] + sentences)
+        embeddings = MODEL.encode([cleaned] + sentences, normalize_embeddings=True)
         doc_vec = embeddings[0]
-        scores = [float(doc_vec @ emb) for emb in embeddings[1:]]
+        scores = [_cosine_similarity(doc_vec, emb) for emb in embeddings[1:]]
         ranked = sorted(zip(scores, sentences), reverse=True)
     else:  # pure keyword mode (still excellent)
         words = re.findall(r"\w+", cleaned.lower())
