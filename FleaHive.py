@@ -6,10 +6,11 @@
 import importlib.util
 import json
 import math
+import os
 import re
 import sys
 from collections import Counter
-from typing import Iterable, List, Sequence
+from typing import Dict, Iterable, List, Sequence, Union
 
 
 def load_model():
@@ -76,10 +77,71 @@ def split_sentences(text: str) -> List[str]:
     return sentences
 
 
-def summarize(text: str, max_len: int = 450, *, already_cleaned: bool = False) -> str:
+def _sentence_spans(text: str) -> List[Dict[str, Union[int, str]]]:
+    spans: List[Dict[str, Union[int, str]]] = []
+    start = 0
+
+    for match in re.finditer(r"(?<=[.!?])\s+", text):
+        end = match.start()
+        segment = text[start:end]
+        stripped = segment.strip()
+        if stripped:
+            leading = len(segment) - len(segment.lstrip())
+            trailing = len(segment) - len(segment.rstrip())
+            spans.append(
+                {
+                    "text": stripped,
+                    "index": len(spans),
+                    "start": start + leading,
+                    "end": end - trailing,
+                }
+            )
+        start = match.end()
+
+    segment = text[start:]
+    stripped = segment.strip()
+    if stripped:
+        leading = len(segment) - len(segment.lstrip())
+        trailing = len(segment) - len(segment.rstrip())
+        spans.append(
+            {
+                "text": stripped,
+                "index": len(spans),
+                "start": start + leading,
+                "end": start + len(segment) - trailing,
+            }
+        )
+
+    if not spans and text.strip():
+        stripped_all = text.strip()
+        leading = len(text) - len(text.lstrip())
+        trailing = len(text) - len(text.rstrip())
+        spans.append(
+            {
+                "text": stripped_all,
+                "index": 0,
+                "start": leading,
+                "end": len(text) - trailing,
+            }
+        )
+
+    return spans
+
+
+def summarize(
+    text: str,
+    max_len: int = 450,
+    *,
+    already_cleaned: bool = False,
+    include_anchors: bool = False,
+) -> Union[str, Dict[str, Union[str, List[Dict[str, Union[int, str]]]]]]:
     cleaned = text if already_cleaned else clean(text)
-    sentences = split_sentences(cleaned)
-    if not sentences and cleaned:
+    sentences_with_spans = _sentence_spans(cleaned)
+    sentences = [entry["text"] for entry in sentences_with_spans]
+    if not sentences_with_spans and cleaned:
+        sentences_with_spans = [
+            {"text": cleaned, "index": 0, "start": 0, "end": len(cleaned)}
+        ]
         sentences = [cleaned]
     if not sentences:
         return "Nothing to summarize after cleaning."
@@ -95,27 +157,51 @@ def summarize(text: str, max_len: int = 450, *, already_cleaned: bool = False) -
         scores = [
             _cosine_similarity(doc_vec, sentence_vec) for sentence_vec in normalized_embeddings[1:]
         ]
-        ranked = sorted(zip(scores, sentences), reverse=True)
+        ranked = sorted(zip(scores, sentences_with_spans), reverse=True)
     else:  # pure keyword mode (still excellent)
         words = re.findall(r"\w+", cleaned.lower())
         common = {w for w, _ in Counter(words).most_common(20) if len(w) > 4}
         ranked = sorted(
-            [(sum(w[:5] in s.lower() for w in common), s) for s in sentences],
+            [
+                (sum(w[:5] in entry["text"].lower() for w in common), entry)
+                for entry in sentences_with_spans
+            ],
             reverse=True,
         )
 
     result: List[str] = []
+    anchors: List[Dict[str, Union[int, str]]] = []
     used = 0
-    for _, sentence in ranked:
+    for _, entry in ranked:
+        sentence = entry["text"]
         if used + len(sentence) <= max_len:
             result.append(sentence)
+            anchors.append(
+                {
+                    "sentence": sentence,
+                    "source_index": entry["index"],
+                    "start": entry["start"],
+                    "end": entry["end"],
+                }
+            )
             used += len(sentence)
         else:
             break
-    return " ".join(result) or cleaned[:max_len] + "…"
+    summary_text = " ".join(result) or cleaned[:max_len] + "…"
+
+    if not include_anchors:
+        return summary_text
+
+    return {"text": summary_text, "anchors": anchors}
 
 
-def tag(text: str, top: int = 8) -> List[str]:
+def tag(
+    text: str,
+    top: int = 8,
+    *,
+    include_anchors: bool = False,
+    source_text: str | None = None,
+) -> Union[List[str], List[Dict[str, Union[int, str, None]]]]:
     words = re.findall(r"\w+", text.lower())
     stop = {
         "the",
@@ -178,15 +264,37 @@ def tag(text: str, top: int = 8) -> List[str]:
         "proposed",
     }
     candidates = [w for w in words if w not in stop and len(w) > 3]
-    return [word for word, _ in Counter(candidates).most_common(top)]
+    tags = [word for word, _ in Counter(candidates).most_common(top)]
+
+    if not include_anchors:
+        return tags
+
+    anchor_text = (source_text or text).lower()
+    anchored_tags: List[Dict[str, Union[int, str, None]]] = []
+    for word in tags:
+        match = re.search(rf"\b{re.escape(word)}\b", anchor_text)
+        anchored_tags.append(
+            {
+                "tag": word,
+                "position": match.start() if match else None,
+            }
+        )
+
+    return anchored_tags
 
 
 def main(argv: Sequence[str]) -> int:
-    if len(argv) < 2:
+    include_anchors = bool(os.getenv("FLEAHIVE_INCLUDE_ANCHORS"))
+    args = list(argv[1:])
+    if any(flag in args for flag in ("-a", "--include-anchors")):
+        include_anchors = True
+        args = [arg for arg in args if arg not in ("-a", "--include-anchors")]
+
+    if not args:
         print(json.dumps({"error": "Drag a .txt or .md file here, or pipe text in"}))
         return 1
 
-    path = argv[1]
+    path = args[0]
     try:
         text = sys.stdin.read() if path == "-" else open(path, "r", encoding="utf-8").read()
     except Exception as exc:  # pragma: no cover - CLI error surface
@@ -194,15 +302,31 @@ def main(argv: Sequence[str]) -> int:
         return 1
 
     cleaned_text = clean(text)
-    summary = summarize(cleaned_text, already_cleaned=True)
-    tags = tag(summary + " " + cleaned_text)
+    summary_result = summarize(cleaned_text, already_cleaned=True, include_anchors=include_anchors)
+    if isinstance(summary_result, dict):
+        summary_text = summary_result["text"]
+        evidence = {"summary": summary_result.get("anchors", [])}
+    else:
+        summary_text = summary_result
+        evidence = {}
+
+    tag_result = tag(
+        summary_text + " " + cleaned_text,
+        include_anchors=include_anchors,
+        source_text=cleaned_text,
+    )
+    if isinstance(tag_result, list) and tag_result and isinstance(tag_result[0], dict):
+        tags = [entry["tag"] for entry in tag_result]  # type: ignore[index]
+        evidence["tags"] = tag_result
+    else:
+        tags = tag_result  # type: ignore[assignment]
 
     original_words = len(re.findall(r"\w+", text))
-    summary_words = len(re.findall(r"\w+", summary))
+    summary_words = len(re.findall(r"\w+", summary_text))
     compression_ratio = summary_words / original_words if original_words else 0
 
     result = {
-        "summary": summary,
+        "summary": summary_text,
         "tags": tags,
         "metrics": {
             "original_words": original_words,
@@ -210,6 +334,9 @@ def main(argv: Sequence[str]) -> int:
             "compression": f"{compression_ratio:.1%}",
         },
     }
+
+    if include_anchors:
+        result["evidence"] = evidence
 
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0

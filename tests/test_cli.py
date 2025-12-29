@@ -2,7 +2,7 @@ import io
 import json
 import re
 
-from FleaHive import main
+from FleaHive import clean, main
 
 
 def test_main_outputs_json_with_compression(monkeypatch, capsys):
@@ -34,3 +34,38 @@ def test_main_missing_file_reports_error_json(tmp_path, capsys):
     assert exit_code == 1
     assert result["error"]
     assert str(missing_path) in result["error"]
+
+
+def test_main_includes_anchors_with_flag(monkeypatch, capsys):
+    text = "Alpha beta. Gamma delta."
+    cleaned = clean(text)
+    monkeypatch.setattr("sys.stdin", io.StringIO(text))
+
+    exit_code = main(["FleaHive.py", "-", "--include-anchors"])
+    captured = capsys.readouterr().out
+    result = json.loads(captured)
+
+    assert exit_code == 0
+    assert "evidence" in result
+    assert result["evidence"]["summary"]
+    first_anchor = result["evidence"]["summary"][0]
+    assert cleaned[first_anchor["start"] : first_anchor["end"]] == first_anchor["sentence"]
+    if "tags" in result["evidence"]:
+        for entry in result["evidence"]["tags"]:
+            position = entry["position"]
+            if position is not None:
+                assert cleaned[position : position + len(entry["tag"])].lower() == entry["tag"]
+
+
+def test_main_respects_env_toggle(monkeypatch, capsys):
+    text = "Env toggle sentence."
+    monkeypatch.setenv("FLEAHIVE_INCLUDE_ANCHORS", "1")
+    monkeypatch.setattr("sys.stdin", io.StringIO(text))
+
+    exit_code = main(["FleaHive.py", "-"])
+    captured = capsys.readouterr().out
+    result = json.loads(captured)
+
+    assert exit_code == 0
+    assert "evidence" in result
+    assert result["evidence"]["summary"]
