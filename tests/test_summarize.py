@@ -45,3 +45,30 @@ def test_semantic_mode_prefers_closest_sentence(monkeypatch):
     summary = FleaHive.summarize(text, already_cleaned=True)
 
     assert summary.startswith("Key insight.")
+
+
+def test_summarize_returns_anchors_when_enabled(monkeypatch):
+    text = "First sentence. Second sentence."
+
+    class FakeModel:
+        def encode(self, values, normalize_embeddings=True):
+            return [
+                [1.0, 0.0],  # document
+                [0.0, 1.0],  # first sentence (lower score)
+                [1.0, 0.0],  # second sentence (highest score)
+            ]
+
+    monkeypatch.setattr(FleaHive, "MODEL", FakeModel())
+
+    result = FleaHive.summarize(text, already_cleaned=True, include_anchors=True, max_len=200)
+
+    assert isinstance(result, dict)
+    assert result["text"].startswith("Second sentence.")
+    assert result["anchors"][0]["sentence"] == "Second sentence."
+    assert result["anchors"][0]["start"] == text.index("Second")
+    assert result["anchors"][0]["end"] == text.index("Second") + len("Second sentence.")
+
+
+def test_summarize_defaults_to_string_without_flag():
+    summary = summarize("Only one short line.", already_cleaned=True)
+    assert isinstance(summary, str)
