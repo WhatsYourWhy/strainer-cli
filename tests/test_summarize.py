@@ -1,3 +1,4 @@
+import FleaHive
 from FleaHive import summarize
 
 
@@ -22,3 +23,25 @@ def test_summarize_preserves_short_sentences():
 
     assert summary  # should not be empty
     assert "Short sentence." in summary or "Tiny info." in summary
+
+
+def test_semantic_mode_prefers_closest_sentence(monkeypatch):
+    text = (
+        "An expansive discussion that covers many unrelated topics. "
+        "Key insight."
+    )
+
+    class FakeModel:
+        def encode(self, values, normalize_embeddings=True):
+            assert normalize_embeddings is True
+            return [
+                [1.0, 0.0],  # document vector
+                [0.0, 1.0],  # expansive discussion
+                [1.0, 0.0],  # key insight
+            ]
+
+    monkeypatch.setattr(FleaHive, "MODEL", FakeModel())
+
+    summary = FleaHive.summarize(text, already_cleaned=True)
+
+    assert summary.startswith("Key insight.")
