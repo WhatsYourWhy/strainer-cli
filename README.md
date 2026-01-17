@@ -4,9 +4,9 @@ Offline document summarization + tagging for text and Markdown.
 
 Strainer is a small, local-first CLI that converts .txt and .md files into structured summaries, tags, and metrics—entirely offline. It’s built for pipelines and note systems, not dashboards.
 
-* Input: text / Markdown
-* Output: JSON (default) or Obsidian-friendly Markdown
-* Network: none (no API calls, no uploads)
+- Input: text / Markdown
+- Output: JSON (default) or Obsidian-friendly Markdown
+- Network: none (no API calls, no uploads)
 
 ---
 
@@ -16,10 +16,10 @@ Most summarizers assume a web app and cloud processing. Strainer is for situatio
 
 Use Strainer when you want:
 
-* Fast compression of long notes into a usable digest
-* Tags you can feed into search / indexing
-* Output that drops into scripts, vaults, or agents
-* Offline operation by default
+- Fast compression of long notes into a usable digest
+- Tags you can feed into search / indexing
+- Output that drops into scripts, vaults, or agents
+- Offline operation by default
 
 ---
 
@@ -27,13 +27,13 @@ Use Strainer when you want:
 
 Strainer produces:
 
-* Extractive summary (top-ranked sentences from the source)
-* Tags (topic keywords)
-* Metrics (word counts + compression)
+- Extractive summary (top-ranked sentences from the source)
+- Tags (topic keywords)
+- Metrics (word counts + compression)
 
 Optional:
 
-* Evidence anchors mapping summary sentences and tags back to the cleaned source text
+- Evidence anchors mapping summary sentences and tags back to the cleaned source text
 
 ---
 
@@ -72,11 +72,11 @@ Runs without optional dependencies.
 
 Supported Python versions:
 
-* 3.8
-* 3.9
-* 3.10
-* 3.11
-* 3.12
+- 3.8
+- 3.9
+- 3.10
+- 3.11
+- 3.12
 
 ---
 
@@ -96,9 +96,9 @@ python Strainer.py my_notes.md
 
 ### Options
 
-* `--include-anchors`: Include evidence anchors for summaries and tags in the output.
-* `--output-md [path]`: Emit Obsidian-friendly Markdown to stdout or write to the optional file path.
-* `STRAINER_INCLUDE_ANCHORS`: Environment variable equivalent of `--include-anchors` (set to `1`).
+- `--include-anchors`: Include evidence anchors for summaries and tags in the output.
+- `--output-md [path]`: Emit Obsidian-friendly Markdown to stdout or write to the optional file path.
+- `STRAINER_INCLUDE_ANCHORS`: Environment variable equivalent of `--include-anchors` (set to `1`).
 
 ### Examples
 
@@ -180,10 +180,10 @@ Optional evidence anchors:
 
 Before analysis, Strainer removes common Markdown noise:
 
-* Frontmatter
-* Links
-* Images
-* Formatting artifacts
+- Frontmatter
+- Links
+- Images
+- Formatting artifacts
 
 This keeps tags and summaries focused on content, not syntax.
 
