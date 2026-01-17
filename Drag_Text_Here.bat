@@ -1,12 +1,12 @@
 @echo off
-:: This line runs FleaHive.py from this folder using whatever Python is on PATH
+:: This line runs Strainer.py from this folder using whatever Python is on PATH
 :: "%~dp0" is a variable that means "the folder this batch file is sitting in"
 
 echo waking up the hive...
 echo ---------------------------------------------------
 
 :: This runs the Python script and passes the file you dropped (%1) to it
-python "%~dp0FleaHive.py" "%~1"
+python "%~dp0Strainer.py" "%~1"
 
 echo.
 echo ---------------------------------------------------

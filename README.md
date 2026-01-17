@@ -1,154 +1,162 @@
-# FleaHive 🐝
+Strainer 🧺
 
-**A drag-and-drop local summarizer & tagger.**
-Small and powerful—built to stay out of your way while giving you fast, useful output.
+Offline document summarization + tagging for text and Markdown
 
-FleaHive is an offline-first helper that accepts `.txt` or `.md` (Markdown) files and returns structured JSON containing:
-- An extractive summary (semantic ranking when available, keyword density otherwise)
-- Auto-generated tags (topics)
-- Word count metrics
+Strainer is a small, local-first CLI that converts .txt and .md files into structured summaries, tags, and metrics—entirely offline. It’s built for pipelines and note systems, not dashboards.
 
-It is designed to live in your toolbox as a small, single-purpose script—not a hosted service.
+Input: text / Markdown
+Output: JSON (default) or Obsidian-friendly Markdown
+Network: none (no API calls, no uploads)
 
-## Features
-- **Smart Mode:** If `sentence-transformers` is installed, FleaHive uses embeddings to rank sentences by importance.
-- **Fast Mode:** When you skip optional AI packages, it runs a pure-Python keyword-density algorithm—no extra downloads required.
-- **Markdown ready:** Strips frontmatter, links, and other Markdown noise before summarization and tagging.
-- **Drag & drop:** Includes a Windows batch wrapper for zero-touch execution.
 
-## Installation
+---
 
-1) Install [Python 3](https://www.python.org/).
-2) (Optional but recommended for Smart Mode) install the language model:
+Why it exists
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+Most summarizers assume a web app and cloud processing. Strainer is for situations where notes must stay local and output needs to be reusable and inspectable.
 
-## Usage
+Use Strainer when you want:
 
-### Method A: Drag & Drop (Windows)
-1) Keep `FleaHive.py` and `Drag_Text_Here.bat` in the same folder.  
-2) Drag any `.txt` or `.md` file onto the `Drag_Text_Here.bat` icon.  
-3) View the JSON summary printed in the console window.  
+Fast compression of long notes into a usable digest
 
-### Method B: Command Line
-Run FleaHive directly and pass a file path:
+Tags you can feed into search / indexing
 
-```bash
-python FleaHive.py my_notes.md
-```
+Output that drops into scripts, vaults, or agents
 
-You can also include sentence/tag anchors in the output:
+Offline operation by default
 
-```bash
-python FleaHive.py my_notes.md --include-anchors
-```
 
-Or toggle anchors via environment variable:
 
-```bash
-FLEAHIVE_INCLUDE_ANCHORS=1 python FleaHive.py my_notes.md
-```
+---
 
-### Output Markdown
-Emit an Obsidian-friendly Markdown summary instead of JSON:
+What it produces
 
-```bash
-python FleaHive.py my_notes.md --output-md
-```
+Extractive summary (top-ranked sentences from the source)
 
-Write the Markdown output directly to a file:
+Tags (topic keywords)
 
-```bash
-python FleaHive.py my_notes.md --output-md summary.md
-```
+Metrics (word counts + compression)
 
-### Method C: Pipe Input
-Pipe text to FleaHive by passing `-` as the path:
 
-```bash
-cat my_article.txt | python FleaHive.py -
-```
+Optional:
 
-## Output format
+Evidence anchors mapping summary sentences and tags back to the cleaned source text
 
-The script prints a JSON document with a summary, tags, and metrics:
 
-```json
-{
-  "summary": "Top-ranked sentences from your document…",
-  "tags": ["topic1", "topic2"],
-  "metrics": {
-    "original_words": 1234,
-    "summary_words": 180,
-    "compression": "14.6%"
-  }
-}
-```
 
-When anchors are enabled, FleaHive adds an `evidence` block with sentence offsets
-and tag positions relative to the cleaned source text:
+---
 
-```json
-{
-  "summary": "Top-ranked sentences from your document…",
-  "tags": ["topic1", "topic2"],
-  "metrics": {
-    "original_words": 1234,
-    "summary_words": 180,
-    "compression": "14.6%"
-  },
-  "evidence": {
-    "summary": [
-      {
-        "sentence": "Top-ranked sentences from your document…",
-        "source_index": 0,
-        "start": 0,
-        "end": 42
-      }
-    ],
-    "tags": [
-      {
-        "tag": "topic1",
-        "position": 0
-      }
-    ]
-  }
-}
-```
+How it works
 
-### Example: Clean tags from Markdown input
+Strainer supports two modes:
 
-Input (`notes.md`):
+Smart Mode (optional): embedding-based sentence ranking (sentence-transformers)
 
-```markdown
-# Honeybee field report
-We observed three colonies near the edge of the meadow.
-See [photos](https://example.com/bee-shots) for details.
-```
+Fast Mode (default): pure-Python keyword-density ranking (no optional installs)
 
-Command:
 
-```bash
-python FleaHive.py notes.md
-```
+Same output format either way.
 
-Result (notice the tags are free of link/markdown noise):
 
-```json
+---
+
+Installation
+
+Requires Python 3.
+
+Optional (Smart Mode):
+
+pip install -r requirements.txt
+
+Runs without optional dependencies.
+
+
+---
+
+Usage
+
+CLI
+
+python Strainer.py my_notes.md
+
+Include evidence anchors:
+
+python Strainer.py my_notes.md --include-anchors
+
+Emit Markdown (Obsidian-friendly) instead of JSON:
+
+python Strainer.py my_notes.md --output-md
+
+Write Markdown to a file:
+
+python Strainer.py my_notes.md --output-md summary.md
+
+Pipe input
+
+cat article.txt | python Strainer.py -
+
+Drag & drop (Windows)
+
+1. Keep Strainer.py and Drag_Text_Here.bat in the same folder
+
+
+2. Drag a .txt or .md file onto Drag_Text_Here.bat
+
+
+3. Read JSON output in the console
+
+
+
+
+---
+
+Example output (JSON)
+
 {
   "summary": "We observed three colonies near the edge of the meadow.",
-  "tags": ["colonies", "meadow", "honeybee", "report", "observed", "field"],
+  "tags": ["colonies", "meadow", "honeybee", "field", "observed"],
   "metrics": {
     "original_words": 21,
     "summary_words": 11,
     "compression": "52.4%"
   }
 }
-```
 
-## Notes
-- FleaHive is fully offline. No network calls are made.
-- If optional dependencies are missing, the tool still runs using Fast Mode.
-- Markdown cleaning removes common noise (frontmatter, links, and image markup) before summarization and tagging.
+Optional evidence anchors
+
+{
+  "evidence": {
+    "summary": [
+      {
+        "sentence": "We observed three colonies near the edge of the meadow.",
+        "source_index": 0,
+        "start": 0,
+        "end": 48
+      }
+    ],
+    "tags": [
+      { "tag": "colonies", "position": 0 }
+    ]
+  }
+}
+
+
+---
+
+Markdown cleaning
+
+Before analysis, Strainer removes common Markdown noise:
+
+frontmatter
+
+links
+
+images
+
+formatting artifacts
+
+
+This keeps tags and summaries focused on content, not syntax.
+
+
+---

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# FleaHive — Best local paper / notes / book summarizer 2025
+# Strainer — Best local paper / notes / book summarizer 2025
 # Drag any .txt onto this file → instant summary + tags + stats
 # 100% offline · zero accounts · zero cost
 
@@ -284,7 +284,7 @@ def tag(
 
 
 def main(argv: Sequence[str]) -> int:
-    include_anchors = bool(os.getenv("FLEAHIVE_INCLUDE_ANCHORS"))
+    include_anchors = bool(os.getenv("STRAINER_INCLUDE_ANCHORS"))
     args = list(argv[1:])
     if any(flag in args for flag in ("-a", "--include-anchors")):
         include_anchors = True
