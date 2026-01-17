@@ -97,8 +97,8 @@ python Strainer.py my_notes.md
 ### Options
 
 - `--include-anchors`: Include evidence anchors for summaries and tags in the output.
-- `--output-md [path]`: Emit Obsidian-friendly Markdown to stdout or write to the optional file path.
-- `STRAINER_INCLUDE_ANCHORS`: Environment variable equivalent of `--include-anchors` (set to `1`).
+- `--output-md [path]`: Emit Obsidian-friendly Markdown instead of JSON. If `path` is provided (and does not start with `-`), Strainer writes the Markdown file *and* prints the same Markdown to stdout. If no path is provided, Markdown is printed to stdout only.
+- `STRAINER_INCLUDE_ANCHORS`: Environment variable that enables evidence anchors (any non-empty value). Note that there is no CLI flag to disable anchors once this env var is set.
 
 ### Examples
 
