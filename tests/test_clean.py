@@ -1,4 +1,4 @@
-from FleaHive import clean
+from Strainer import clean
 
 
 def test_clean_removes_frontmatter_at_start():

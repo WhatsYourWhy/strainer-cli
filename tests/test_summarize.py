@@ -1,5 +1,5 @@
-import FleaHive
-from FleaHive import summarize
+import Strainer
+from Strainer import summarize
 
 
 def test_summarize_truncates_when_sentence_exceeds_max_len():
@@ -40,9 +40,9 @@ def test_semantic_mode_prefers_closest_sentence(monkeypatch):
                 [1.0, 0.0],  # key insight (short but fully aligned)
             ]
 
-    monkeypatch.setattr(FleaHive, "MODEL", FakeModel())
+    monkeypatch.setattr(Strainer, "MODEL", FakeModel())
 
-    summary = FleaHive.summarize(text, already_cleaned=True)
+    summary = Strainer.summarize(text, already_cleaned=True)
 
     assert summary.startswith("Key insight.")
 
@@ -58,9 +58,9 @@ def test_summarize_returns_anchors_when_enabled(monkeypatch):
                 [1.0, 0.0],  # second sentence (highest score)
             ]
 
-    monkeypatch.setattr(FleaHive, "MODEL", FakeModel())
+    monkeypatch.setattr(Strainer, "MODEL", FakeModel())
 
-    result = FleaHive.summarize(text, already_cleaned=True, include_anchors=True, max_len=200)
+    result = Strainer.summarize(text, already_cleaned=True, include_anchors=True, max_len=200)
 
     assert isinstance(result, dict)
     assert result["text"].startswith("Second sentence.")

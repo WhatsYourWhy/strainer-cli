@@ -2,7 +2,7 @@ import io
 import json
 import re
 
-from FleaHive import clean, main
+from Strainer import clean, main
 
 
 def test_main_outputs_json_with_compression(monkeypatch, capsys):
@@ -12,7 +12,7 @@ def test_main_outputs_json_with_compression(monkeypatch, capsys):
     )
     monkeypatch.setattr("sys.stdin", io.StringIO(text))
 
-    exit_code = main(["FleaHive.py", "-"])
+    exit_code = main(["Strainer.py", "-"])
     captured = capsys.readouterr().out
     result = json.loads(captured)
 
@@ -27,7 +27,7 @@ def test_main_outputs_json_with_compression(monkeypatch, capsys):
 def test_main_missing_file_reports_error_json(tmp_path, capsys):
     missing_path = tmp_path / "missing.txt"
 
-    exit_code = main(["FleaHive.py", str(missing_path)])
+    exit_code = main(["Strainer.py", str(missing_path)])
     captured = capsys.readouterr().out
     result = json.loads(captured)
 
@@ -41,7 +41,7 @@ def test_main_includes_anchors_with_flag(monkeypatch, capsys):
     cleaned = clean(text)
     monkeypatch.setattr("sys.stdin", io.StringIO(text))
 
-    exit_code = main(["FleaHive.py", "-", "--include-anchors"])
+    exit_code = main(["Strainer.py", "-", "--include-anchors"])
     captured = capsys.readouterr().out
     result = json.loads(captured)
 
@@ -59,10 +59,10 @@ def test_main_includes_anchors_with_flag(monkeypatch, capsys):
 
 def test_main_respects_env_toggle(monkeypatch, capsys):
     text = "Env toggle sentence."
-    monkeypatch.setenv("FLEAHIVE_INCLUDE_ANCHORS", "1")
+    monkeypatch.setenv("STRAINER_INCLUDE_ANCHORS", "1")
     monkeypatch.setattr("sys.stdin", io.StringIO(text))
 
-    exit_code = main(["FleaHive.py", "-"])
+    exit_code = main(["Strainer.py", "-"])
     captured = capsys.readouterr().out
     result = json.loads(captured)
 
