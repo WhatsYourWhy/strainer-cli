@@ -39,6 +39,18 @@ Run FleaHive directly and pass a file path:
 python FleaHive.py my_notes.md
 ```
 
+You can also include sentence/tag anchors in the output:
+
+```bash
+python FleaHive.py my_notes.md --include-anchors
+```
+
+Or toggle anchors via environment variable:
+
+```bash
+FLEAHIVE_INCLUDE_ANCHORS=1 python FleaHive.py my_notes.md
+```
+
 ### Method C: Pipe Input
 Pipe text to FleaHive by passing `-` as the path:
 
@@ -58,6 +70,37 @@ The script prints a JSON document with a summary, tags, and metrics:
     "original_words": 1234,
     "summary_words": 180,
     "compression": "14.6%"
+  }
+}
+```
+
+When anchors are enabled, FleaHive adds an `evidence` block with sentence offsets
+and tag positions relative to the cleaned source text:
+
+```json
+{
+  "summary": "Top-ranked sentences from your document…",
+  "tags": ["topic1", "topic2"],
+  "metrics": {
+    "original_words": 1234,
+    "summary_words": 180,
+    "compression": "14.6%"
+  },
+  "evidence": {
+    "summary": [
+      {
+        "sentence": "Top-ranked sentences from your document…",
+        "source_index": 0,
+        "start": 0,
+        "end": 42
+      }
+    ],
+    "tags": [
+      {
+        "tag": "topic1",
+        "position": 0
+      }
+    ]
   }
 }
 ```
