@@ -1,8 +1,8 @@
-# Strainer 🧺
+# strainer-cli 🧺
 
 Offline document summarization + tagging for text and Markdown.
 
-Strainer is a small, local-first CLI that converts .txt and .md files into structured summaries, tags, and metrics—entirely offline. It’s built for pipelines and note systems, not dashboards.
+strainer-cli is a small, local-first CLI that converts .txt and .md files into structured summaries, tags, and metrics—entirely offline. It’s built for pipelines and note systems, not dashboards.
 
 - Input: text / Markdown
 - Output: JSON (default) or Obsidian-friendly Markdown
@@ -10,15 +10,15 @@ Strainer is a small, local-first CLI that converts .txt and .md files into struc
 
 ## Privacy (offline-first)
 
-Strainer runs fully offline: it makes zero network calls and never uploads your data.
+strainer-cli runs fully offline: it makes zero network calls and never uploads your data.
 
 ---
 
 ## Why it exists
 
-Most summarizers assume a web app and cloud processing. Strainer is for situations where notes must stay local and output needs to be reusable and inspectable.
+Most summarizers assume a web app and cloud processing. strainer-cli is for situations where notes must stay local and output needs to be reusable and inspectable.
 
-Use Strainer when you want:
+Use strainer-cli when you want:
 
 - Fast compression of long notes into a usable digest
 - Tags you can feed into search / indexing
@@ -29,7 +29,7 @@ Use Strainer when you want:
 
 ## Output
 
-Strainer produces:
+strainer-cli produces:
 
 - Extractive summary (top-ranked sentences from the source)
 - Tags (topic keywords)
@@ -43,7 +43,7 @@ Optional:
 
 ## How it works
 
-Strainer supports two modes. The output format is the same either way.
+strainer-cli supports two modes. The output format is the same either way.
 
 | Mode | Dependencies | Ranking approach | Speed |
 | --- | --- | --- | --- |
