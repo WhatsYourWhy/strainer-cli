@@ -1,14 +1,13 @@
 @echo off
-:: This line runs Strainer.py from this folder using whatever Python is on PATH
-:: "%~dp0" is a variable that means "the folder this batch file is sitting in"
+:: Drag a .txt or .md file onto this batch file to summarize it.
+:: "%~dp0" is the folder this batch file is sitting in.
 
-echo waking up the hive...
+echo straining...
 echo ---------------------------------------------------
 
-:: This runs the Python script and passes the file you dropped (%1) to it
-python "%~dp0Strainer.py" "%~1"
+python -m strainer "%~1"
 
 echo.
 echo ---------------------------------------------------
-echo Done. JSON output is above.
+echo Done.
 pause

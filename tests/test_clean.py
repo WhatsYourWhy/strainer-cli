@@ -1,4 +1,4 @@
-from Strainer import clean
+from strainer.core import clean
 
 
 def test_clean_removes_frontmatter_at_start():

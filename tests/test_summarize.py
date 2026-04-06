@@ -1,5 +1,5 @@
-import Strainer
-from Strainer import summarize
+import strainer.core as core
+from strainer.core import summarize
 
 
 def test_summarize_truncates_when_sentence_exceeds_max_len():
@@ -8,7 +8,7 @@ def test_summarize_truncates_when_sentence_exceeds_max_len():
         "maximum length limit when summarized in a single pass without splitting."
     )
     summary = summarize(long_sentence, max_len=50, already_cleaned=True)
-    assert summary.endswith("…")
+    assert summary.endswith("\u2026")
     assert len(summary) == 51  # 50 chars + ellipsis
 
 
@@ -21,13 +21,14 @@ def test_summarize_preserves_short_sentences():
     text = "Short sentence. Tiny info."
     summary = summarize(text, max_len=100, already_cleaned=True)
 
-    assert summary  # should not be empty
+    assert summary
     assert "Short sentence." in summary or "Tiny info." in summary
 
 
 def test_semantic_mode_prefers_closest_sentence(monkeypatch):
     text = (
-        "An expansive discussion that covers many unrelated topics and keeps going well beyond the core idea. "
+        "An expansive discussion that covers many unrelated topics and keeps going "
+        "well beyond the core idea. "
         "Key insight."
     )
 
@@ -36,13 +37,13 @@ def test_semantic_mode_prefers_closest_sentence(monkeypatch):
             assert normalize_embeddings is True
             return [
                 [1.0, 0.0],  # document vector
-                [10.0, 4.0],  # expansive discussion (longer but less aligned)
-                [1.0, 0.0],  # key insight (short but fully aligned)
+                [10.0, 4.0],  # expansive discussion
+                [1.0, 0.0],  # key insight
             ]
 
-    monkeypatch.setattr(Strainer, "MODEL", FakeModel())
+    monkeypatch.setattr(core, "MODEL", FakeModel())
 
-    summary = Strainer.summarize(text, already_cleaned=True)
+    summary = core.summarize(text, already_cleaned=True)
 
     assert summary.startswith("Key insight.")
 
@@ -53,14 +54,14 @@ def test_summarize_returns_anchors_when_enabled(monkeypatch):
     class FakeModel:
         def encode(self, values, normalize_embeddings=True):
             return [
-                [1.0, 0.0],  # document
-                [0.0, 1.0],  # first sentence (lower score)
-                [1.0, 0.0],  # second sentence (highest score)
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 0.0],
             ]
 
-    monkeypatch.setattr(Strainer, "MODEL", FakeModel())
+    monkeypatch.setattr(core, "MODEL", FakeModel())
 
-    result = Strainer.summarize(text, already_cleaned=True, include_anchors=True, max_len=200)
+    result = core.summarize(text, already_cleaned=True, include_anchors=True, max_len=200)
 
     assert isinstance(result, dict)
     assert result["text"].startswith("Second sentence.")
