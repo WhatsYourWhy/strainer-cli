@@ -1,0 +1,20 @@
+[
+  "tests/test_clean.py::test_clean_keeps_content_after_mid_body_rule",
+  "tests/test_clean.py::test_clean_removes_frontmatter_at_start",
+  "tests/test_clean.py::test_clean_strips_markdown_and_links",
+  "tests/test_cli.py::test_main_help_flag",
+  "tests/test_cli.py::test_main_human_output_is_default",
+  "tests/test_cli.py::test_main_includes_anchors_with_flag",
+  "tests/test_cli.py::test_main_json_flag_outputs_json",
+  "tests/test_cli.py::test_main_missing_file_json_mode",
+  "tests/test_cli.py::test_main_missing_file_reports_error",
+  "tests/test_cli.py::test_main_no_args_shows_usage",
+  "tests/test_cli.py::test_main_respects_env_toggle",
+  "tests/test_cli.py::test_main_version_flag",
+  "tests/test_summarize.py::test_semantic_mode_prefers_closest_sentence",
+  "tests/test_summarize.py::test_summarize_defaults_to_string_without_flag",
+  "tests/test_summarize.py::test_summarize_handles_empty_input",
+  "tests/test_summarize.py::test_summarize_preserves_short_sentences",
+  "tests/test_summarize.py::test_summarize_returns_anchors_when_enabled",
+  "tests/test_summarize.py::test_summarize_truncates_when_sentence_exceeds_max_len"
+]
